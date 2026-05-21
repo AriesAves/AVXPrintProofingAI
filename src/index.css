@@ -1,0 +1,243 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+    --deep-charcoal: #0f1419;
+    --navy-charcoal: #1a2332;
+    --slate-panel: #232f3e;
+    --teal-accent: #00d4aa;
+    --purple-accent: #7c5cff;
+    --success-green: #22c55e;
+    --warning-amber: #f59e0b;
+    --error-red: #ef4444;
+  }
+
+  * {
+    @apply border-border-slate;
+  }
+
+  body {
+    @apply bg-deep-charcoal text-text-primary font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-slate-panel/60 backdrop-blur-xl border border-border-slate/50 rounded-xl;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300;
+  }
+
+  .glass-card-hover:hover {
+    @apply border-teal-accent/30;
+    box-shadow: 0 8px 32px rgba(0, 212, 170, 0.1);
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 bg-teal-accent text-deep-charcoal font-semibold rounded-lg
+           transition-all duration-200 hover:shadow-lg hover:shadow-teal-accent/25
+           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-slate-panel border border-border-slate text-text-primary
+           font-medium rounded-lg transition-all duration-200
+           hover:border-purple-accent/50 hover:bg-slate-panel/80
+           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply px-3 py-1.5 text-text-secondary rounded-lg transition-all duration-200
+           hover:bg-slate-panel/50 hover:text-text-primary;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 bg-navy-charcoal border border-border-slate rounded-lg
+           text-text-primary placeholder-text-secondary/50
+           focus:outline-none focus:border-teal-accent/50 focus:ring-2 focus:ring-teal-accent/20
+           transition-all duration-200;
+  }
+
+  .drop-zone {
+    @apply border-2 border-dashed border-border-slate rounded-xl p-8
+           transition-all duration-300 cursor-pointer;
+  }
+
+  .drop-zone:hover, .drop-zone-active {
+    @apply border-teal-accent bg-teal-accent/5;
+  }
+
+  .drop-zone-active {
+    animation: pulseGlow 2s infinite;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply bg-success-green/20 text-success-green border border-success-green/30;
+  }
+
+  .badge-warning {
+    @apply bg-warning-amber/20 text-warning-amber border border-warning-amber/30;
+  }
+
+  .badge-error {
+    @apply bg-error-red/20 text-error-red border border-error-red/30;
+  }
+
+  .badge-info {
+    @apply bg-purple-accent/20 text-purple-accent border border-purple-accent/30;
+  }
+
+  .severity-critical {
+    @apply text-error-red bg-error-red/10 border-l-4 border-error-red;
+  }
+
+  .severity-warning {
+    @apply text-warning-amber bg-warning-amber/10 border-l-4 border-warning-amber;
+  }
+
+  .severity-info {
+    @apply text-purple-accent bg-purple-accent/10 border-l-4 border-purple-accent;
+  }
+
+  .severity-pass {
+    @apply text-success-green bg-success-green/10 border-l-4 border-success-green;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #334155 transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-navy-charcoal rounded;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-border-slate rounded hover:bg-slate-panel;
+  }
+
+  .progress-bar {
+    @apply h-2 bg-navy-charcoal rounded-full overflow-hidden;
+  }
+
+  .progress-bar-fill {
+    @apply h-full bg-gradient-to-r from-teal-accent to-purple-accent rounded-full
+           transition-all duration-500 ease-out;
+    background-size: 200% 100%;
+    animation: progress 1.5s ease-in-out infinite;
+  }
+
+  .preview-toolbar {
+    @apply flex items-center gap-2 p-2 bg-navy-charcoal/90 backdrop-blur-sm
+           rounded-lg border border-border-slate/50;
+  }
+
+  .toolbar-btn {
+    @apply p-2 rounded-lg transition-all duration-200 text-text-secondary
+           hover:bg-slate-panel hover:text-teal-accent
+           active:scale-95 disabled:opacity-40;
+  }
+
+  .toolbar-btn-active {
+    @apply bg-teal-accent/20 text-teal-accent;
+  }
+
+  .accordion-content {
+    @apply overflow-hidden transition-all duration-300;
+  }
+
+  .skeleton {
+    @apply bg-navy-charcoal animate-pulse rounded;
+  }
+
+  .score-ring {
+    @apply relative w-24 h-24;
+  }
+
+  .score-ring-bg {
+    @apply absolute inset-0 rounded-full border-4 border-navy-charcoal;
+  }
+
+  .score-ring-fill {
+    @apply absolute inset-0 rounded-full border-4 border-transparent
+           transition-all duration-1000 ease-out;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-teal-accent to-purple-accent bg-clip-text text-transparent;
+  }
+
+  .bg-gradient-dark {
+    @apply bg-gradient-to-br from-navy-charcoal via-slate-panel to-deep-charcoal;
+  }
+
+  .bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* PDF.js overrides */
+.react-pdf__Document {
+  @apply flex flex-col items-center;
+}
+
+.react-pdf__Page {
+  @apply shadow-2xl rounded-lg overflow-hidden;
+}
+
+.react-pdf__Page__canvas {
+  @apply max-w-full h-auto;
+}
+
+.react-pdf__Page__textContent {
+  @apply text-text-primary/80;
+}
+
+/* Custom scrollbar for all scrollable areas */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 #1a2332;
+}
+
+/* Hide scrollbar but allow scrolling */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
