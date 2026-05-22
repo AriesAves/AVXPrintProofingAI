@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVXPrePress AI Nexus | Intelligent Print Analysis</title>
+    <style>
+        :root {
+            /* Color Palette - Professional Dark Mode */
+            --bg-body: #0f172a;
+            --bg-panel: #1e293b;
+            --bg-card: #334155;
+            --bg-hover: #475569;
+            --primary: #38bdf8; /* AI Cyan */
+            --primary-dim: rgba(56, 189, 248, 0.1);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Scrollbar --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-body); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* --- Header --- */
+        header {
+            height: 64px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            flex-shrink: 0;
+            z-index: 20;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.5px;
+        }
+
+        .brand svg { width: 28px; height: 28px; color: var(--primary); }
+
+        .header-actions { display: flex; gap: 1rem; align-items: center; }
+        
+        .ai-badge {
+            font-size: 0.75rem;
+            background: var(--primary-dim);
+            color: var(--primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover { background: var(--bg-hover); }
+        .btn-primary { background: var(--primary); color: #0f172a; border-color: var(--primary); }
+        .btn-primary:hover { background: #0ea5e9; }
+
+        /* --- Main Layout --- */
+        main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* --- Left Panel: Analysis (35%) --- */
+        .analysis-panel {
+            width: 35%;
+            min-width: 400px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .panel-section {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Score Ring */
+        .score-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .score-ring {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 6px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .score-ring.pass { color: var(--success); border-color: rgba(16, 185, 129, 0.2); }
+        .score-ring.fail { color: var(--danger); border-color: rgba(239, 68, 68, 0.2); }
+        .score-ring.warn { color: var(--warning); border-color: rgba(245, 158, 11, 0.2); }
+
+        .score-text h2 { font-size: 1.1rem; margin-bottom: 0.25rem; }
+        .score-text p { font-size: 0.85rem; color: var(--text-muted); }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .metric-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+        .metric-value { font-size: 1rem; font-weight: 600; }
+        .metric-sub { font-size: 0.7rem; margin-top: 0.25rem; display: flex; align-items: center; gap: 4px; }
+
+        /* Sections */
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Issue Log */
+        .issue-card {
+            background: rgba(0,0,0,0.2);
+            border-left: 3px solid var(--text-muted);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 0 6px 6px 0;
+            animation: slideIn 0.3s ease-out;
+        }
+        .issue-card.error { border-left-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .issue-card.warn { border-left-color: var(--warning); background: rgba(245, 158, 11, 0.1); }
+        
+        .issue-top { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+        .issue-type { font-weight: 600; font-size: 0.9rem; }
+        .issue-page { font-size: 0.75rem; background: var(--bg-card); padding: 2px 6px; border-radius: 4px; color: var(--text-muted); }
+        .issue-desc { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.4; }
+        
+        .issue-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem; }
+        .fix-link { color: var(--primary); font-size: 0.8rem; cursor: pointer; text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+        .fix-link:hover { text-decoration: underline; }
+        
+        .ai-train { font-size: 0.7rem; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .ai-train:hover { color: var(--text-main); }
+
+        /* Font Detection & Libraries */
+        .font-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .font-info h4 { font-family: var(--font-mono); font-size: 0.9rem; margin-bottom: 2px; }
+        .font-status { font-size: 0.7rem; color: var(--text-muted); }
+        
+        .lib-icons { display: flex; gap: 4px; }
+        .lib-dot { 
+            width: 16px; height: 16px; border-radius: 3px; cursor: help; 
+            position: relative; 
+        }
+        /* Tooltip hack for pure CSS/JS */
+        .lib-dot:hover::after {
+            content: attr(data-lib);
+            position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
+            background: #000; color: #fff; padding: 4px 8px; font-size: 10px; white-space: nowrap;
+            border-radius: 4px; pointer-events: none; z-index: 50;
+        }
+
+        /* --- Right Panel: Live Preview (65%) --- */
+        .preview-panel {
+            width: 65%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .preview-toolbar {
+            height: 48px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1rem;
+        }
+
+        .file-name { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
+
+        .zoom-controls { display: flex; gap: 0.5rem; align-items: center; }
+        .icon-btn { 
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; 
+            background: var(--bg-card); border: 1px solid var(--border); 
+            border-radius: 4px; cursor: pointer; color: var(--text-main); 
+        }
+        .icon-btn:hover { background: var(--bg-hover); }
+
+        .viewer-stage {
+            flex: 1;
+            overflow: hidden;
+            background: #525252; /* Standard PDF viewer grey */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Native PDF Viewer (Iframe) */
+        iframe.pdf-viewer {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        /* Image Viewer */
+        img.image-viewer {
+            max-width: 95%;
+            max-height: 95%;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease-out;
+            object-fit: contain;
+        }
+
+        /* Scanning Animation */
+        .scan-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+            z-index: 50;
+            display: none;
+            opacity: 0.8;
+        }
+        .scanning .scan-line { display: block; animation: scanMove 2s linear infinite; }
+
+        @keyframes scanMove {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Upload Modal */
+        .modal {
+            position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+        }
+        
+        .drop-zone {
+            width: 500px; padding: 3rem;
+            border: 2px dashed var(--border); border-radius: 12px;
+            text-align: center; background: var(--bg-panel);
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .drop-zone.dragover { border-color: var(--primary); background: rgba(56, 189, 248, 0.05); }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 20px; right: 20px;
+            background: var(--bg-card); color: white;
+            padding: 1rem 1.5rem; border-radius: 6px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+            transform: translateY(100px); opacity: 0;
+            transition: all 0.3s;
+            z-index: 200;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        .hidden { display: none !important; }
+
+        .empty-msg { text-align: center; color: var(--text-muted); margin-top: 4rem; }
+    </style>
+</head>
+<body>
+
+    <!-- Upload Modal -->
+    <div class="modal" id="uploadModal">
+        <div class="drop-zone" id="dropZone">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary); margin-bottom: 1rem;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <h2 style="margin-bottom: 0.5rem;">Upload File for AI Inspection</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Drag & Drop PDF, PNG, JPG, TIFF, PSD</p>
+            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Browse Files</button>
+            <input type="file" id="fileInput" hidden accept=".pdf,.png,.jpg,.jpeg,.tiff,.tif,.psd,.ai,.eps">
+        </div>
+    </div>
+
+    <header>
+        <div class="brand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            AVX PrePress AI Nexus
+        </div>
+        <div class="header-actions">
+            <div class="ai-badge">Continuous Learning: Active</div>
+            <button class="btn" onclick="resetApp()">New File</button>
+            <button class="btn btn-primary" onclick="exportReport()">Export Report</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Left: Analysis Panel -->
+        <div class="analysis-panel" id="analysisPanel">
+            <!-- Results Container (Hidden initially) -->
+            <div id="resultsContainer" class="hidden">
+                
+                <!-- Score & Status -->
+                <div class="panel-section">
+                    <div class="score-header">
+                        <div class="score-ring" id="scoreRing">--</div>
+                        <div class="score-text">
+                            <h2 id="statusTitle">Processing...</h2>
+                            <p id="statusDesc">AI is analyzing document structure</p>
+                        </div>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Dimensions (Inches)</div>
+                            <div class="metric-value" id="dimVal">--</div>
+                            <div class="metric-sub" id="dimSub">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Resolution / DPI</div>
+                            <div class="metric-value" id="dpiVal">--</div>
+                            <div class="metric-sub" id="dpiSub">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Color Space</div>
+                            <div class="metric-value" id="colorVal">--</div>
+                            <div class="metric-sub" id="colorSub">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Ink Coverage</div>
+                            <div class="metric-value" id="inkVal">--</div>
+                            <div class="metric-sub">Max Limit: 300%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Font Detection -->
+                <div class="panel-section">
+                    <div class="section-title">
+                        <span>Typography & Libraries</span>
+                    </div>
+                    <div id="fontList">
+                        <!-- Injected JS -->
+                    </div>
+                </div>
+
+                <!-- Issue Log -->
+                <div class="panel-section">
+                    <div class="section-title">
+                        <span>Production Issues</span>
+                        <span id="issueCount" style="background:var(--bg-card); padding:2px 8px; border-radius:10px; font-size:0.75rem;">0</span>
+                    </div>
+                    <div id="issueLog">
+                        <!-- Injected JS -->
+                    </div>
+                </div>
+
+                <!-- Compliance -->
+                <div class="panel-section" style="border:none;">
+                    <div class="section-title">Standards Compliance</div>
+                    <div style="display: grid; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+                        <div style="display:flex; justify-content:space-between;"><span>ISO 12647-2</span> <span id="iso1" style="color:var(--text-muted)">Checking...</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span>PDF/X-1a:2001</span> <span id="pdfx1" style="color:var(--text-muted)">Checking...</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span>G7 Calibration</span> <span id="g71" style="color:var(--text-muted)">Checking...</span></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div id="emptyState" class="empty-msg">
+                <p>Waiting for file...</p>
+            </div>
+        </div>
+
+        <!-- Right: Live Preview Panel -->
+        <div class="preview-panel" id="previewPanel">
+            <div class="scan-line"></div>
+            
+            <div class="preview-toolbar">
+                <div class="file-name" id="fileNameDisplay">No File Loaded</div>
+                <div class="zoom-controls">
+                    <button class="icon-btn" onclick="zoomOut()" title="Zoom Out">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
+                    <span id="zoomDisplay" style="font-size:0.85rem; width:50px; text-align:center;">100%</span>
+                    <button class="icon-btn" onclick="zoomIn()" title="Zoom In">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
+                    <button class="icon-btn" onclick="resetZoom()" title="Fit to Screen">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="viewer-stage" id="viewerStage">
+                <!-- Iframe or Img goes here -->
+            </div>
+        </div>
+    </main>
+
+    <div class="toast" id="toast">Notification</div>
+
+    <script>
+        // --- CONFIG: Font Libraries & Database ---
+        const LIBRARIES = {
+            google: { name: 'Google Fonts', color: '#4285F4' },
+            dafont: { name: 'DaFont', color: '#F4511E' },
+            squirrel: { name: 'Font Squirrel', color: '#FBC02D' },
+            1001: { name: '1001 Fonts', color: '#8E24AA' },
+            adobe: { name: 'Adobe Fonts', color: '#FF0000' },
+            befonts: { name: 'Befonts', color: '#00BCD4' },
+            urban: { name: 'Urban Fonts', color: '#607D8B' },
+            fontspace: { name: 'FontSpace', color: '#3F51B5' },
+            league: { name: 'League of Movable Type', color: '#263238' },
+            velvetyne: { name: 'Velvetyne Type', color: '#E91E63' }
+        };
+
+        // Simulated Database mapping fonts to libraries
+        const FONT_DB = [
+            { name: 'Roboto', libs: ['google', 'adobe', 'urban'] },
+            { name: 'Open Sans', libs: ['google', 'adobe', 'squirrel'] },
+            { name: 'Lato', libs: ['google', 'adobe'] },
+            { name: 'Montserrat', libs: ['google', '1001', 'fontspace'] },
+            { name: 'Playfair Display', libs: ['google', 'adobe', 'squirrel'] },
+            { name: 'Oswald', libs: ['google', 'urban', '1001'] },
+            { name: 'Raleway', libs: ['google', 'adobe', 'fontspace'] },
+            { name: 'Bebas Neue', libs: ['dafont', '1001', 'urban'] },
+            { name: 'Lobster', libs: ['google', 'dafont'] },
+            { name: 'Pacifico', libs: ['google', 'dafont', 'fontspace'] },
+            { name: 'PT Sans', libs: ['google', 'adobe'] },
+            { name: 'Merriweather', libs: ['google', 'adobe', 'squirrel'] },
+            { name: 'Source Sans Pro', libs: ['google', 'adobe'] },
+            { name: 'Poppins', libs: ['google', '1001'] },
+            { name: 'Ubuntu', libs: ['google', 'urban'] },
+            { name: 'Impact', libs: ['dafont', 'urban'] }, // Common system font often associated with these
+            { name: 'Arial', libs: ['urban', 'fontspace'] }
+        ];
+
+        // --- STATE & DOM ---
+        const state = {
+            file: null,
+            zoom: 1,
+            url: null,
+            type: null
+        };
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadModal = document.getElementById('uploadModal');
+        const viewerStage = document.getElementById('viewerStage');
+        const previewPanel = document.getElementById('previewPanel');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const emptyState = document.getElementById('emptyState');
+
+        // --- EVENT LISTENERS ---
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        // --- CORE FUNCTIONS ---
+
+        function handleFile(file) {
+            if (!file) return;
+            
+            state.file = file;
+            state.type = file.type;
+            state.zoom = 1;
+            updateZoomDisplay();
+            
+            // UI Updates
+            uploadModal.style.display = 'none';
+            document.getElementById('fileNameDisplay').textContent = file.name;
+            previewPanel.classList.add('scanning'); // Start visual scan
+            emptyState.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+
+            // 1. Render Preview (Native)
+            renderPreview(file);
+
+            // 2. Simulate AI Analysis (Async)
+            setTimeout(() => {
+                const data = runAIAnalysis(file);
+                renderResults(data);
+                previewPanel.classList.remove('scanning'); // Stop scan
+                showToast("Analysis Complete");
+            }, 2500);
+        }
+
+        function renderPreview(file) {
+            viewerStage.innerHTML = '';
+            
+            if (file.type === 'application/pdf') {
+                // Create Blob URL for native PDF viewing (Unrestricted access)
+                const blob = new Blob([file], { type: 'application/pdf' });
+                state.url = URL.createObjectURL(blob);
+                const iframe = document.createElement('iframe');
+                iframe.className = 'pdf-viewer';
+                iframe.src = state.url;
+                viewerStage.appendChild(iframe);
+            } else if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    state.url = e.target.result;
+                    const img = document.createElement('img');
+                    img.src = state.url;
+                    img.className = 'image-viewer';
+                    img.id = 'mainImage';
+                    viewerStage.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // Fallback for PSD/EPS
+                viewerStage.innerHTML = `
+                    <div style="text-align:center; color:white;">
+                        <h3>${file.name.split('.').pop().toUpperCase()}</h3>
+                        <p style="font-size:0.8rem; color:#94a3b8;">Binary analysis running.<br>Preview not available in browser.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function runAIAnalysis(file) {
+            // --- SIMULATED AI ENGINE ---
+            const isImage = file.type.startsWith('image/');
+            let issues = [];
+            let score = 100;
+
+            // 1. Dimensions & DPI
+            let width = 2480, height = 3508, dpi = 300; // Defaults A4 @ 300
+            if (isImage) {
+                const img = document.getElementById('mainImage');
+                if (img) {
+                    width = img.naturalWidth;
+                    height = img.naturalHeight;
+                }
+            }
+
+            // Calculate Inches
+            const widthIn = (width / dpi).toFixed(2);
+            const heightIn = (height / dpi).toFixed(2);
+
+            // 2. Color Mode
+            const isRGB = isImage ? true : (Math.random() > 0.6); // Images are usually RGB
+            const colorMode = isRGB ? 'RGB' : 'CMYK';
+            
+            if (isRGB) {
+                issues.push({
+                    type: 'Color Space',
+                    severity: 'error',
+                    msg: `Document is ${colorMode}. Printing requires CMYK. Expect color shifts.`,
+                    page: isImage ? 'N/A' : 'All',
+                    action: 'Convert to CMYK'
+                });
+                score -= 20;
+            }
+
+            // 3. Font Detection
+            const fonts = [];
+            const numFonts = Math.floor(Math.random() * 3) + 1;
+            
+            for(let i=0; i<numFonts; i++) {
+                const fontRef = FONT_DB[Math.floor(Math.random() * FONT_DB.length)];
+                const missing = Math.random() > 0.9;
+                
+                if (missing) {
+                    issues.push({
+                        type: 'Typography',
+                        severity: 'error',
+                        msg: `Font "${fontRef.name}" is not embedded.`,
+                        page: '1',
+                        action: 'Outline Fonts'
+                    });
+                    score -= 10;
+                }
+
+                // Map libraries
+                const libKeys = fontRef.libs;
+                fonts.push({
+                    name: fontRef.name,
+                    status: missing ? 'Missing' : 'Embedded',
+                    libs: libKeys
+                });
+            }
+
+            // 4. Ink & Layout
+            const tac = Math.floor(Math.random() * (340 - 180) + 180);
+            if (tac > 300) {
+                issues.push({
+                    type: 'Ink Limit',
+                    severity: 'warn',
+                    msg: `Total Ink Coverage ${tac}% exceeds 300% standard.`,
+                    page: Math.floor(Math.random()*5)+1,
+                    action: 'Reduce Ink Limit'
+                });
+                score -= 10;
+            }
+
+            if (Math.random() > 0.5) {
+                issues.push({
+                    type: 'Bleed/Trim',
+                    severity: 'warn',
+                    msg: 'Insufficient bleed (< 3mm). White edges possible after trimming.',
+                    page: '1',
+                    action: 'Extend Artwork'
+                });
+                score -= 15;
+            }
+
+            return {
+                score: Math.max(0, score),
+                dimensions: `${widthIn}" x ${heightIn}"`,
+                rawPixels: `${width} x ${height} px`,
+                colorMode,
+                dpi,
+                tac,
+                fonts,
+                issues
+            };
+        }
+
+        function renderResults(data) {
+            // Score
+            const ring = document.getElementById('scoreRing');
+            ring.textContent = `${data.score}%`;
+            ring.className = `score-ring ${data.score >= 80 ? 'pass' : (data.score >= 50 ? 'warn' : 'fail')}`;
+            
+            const title = document.getElementById('statusTitle');
+            const desc = document.getElementById('statusDesc');
+            if(data.score >= 80) { title.textContent="Production Ready"; title.style.color="var(--success)"; }
+            else if(data.score >= 50) { title.textContent="Review Required"; title.style.color="var(--warning)"; }
+            else { title.textContent="Critical Errors"; title.style.color="var(--danger)"; }
+
+            // Metrics
+            document.getElementById('dimVal').textContent = data.dimensions;
+            document.getElementById('dimSub').textContent = data.rawPixels;
+            document.getElementById('colorVal').textContent = data.colorMode;
+            document.getElementById('colorSub').textContent = data.colorMode === 'RGB' ? 'Risk: Shift' : 'Compliant';
+            document.getElementById('colorSub').style.color = data.colorMode === 'RGB' ? 'var(--danger)' : 'var(--success)';
+            document.getElementById('dpiVal').textContent = `${data.dpi} DPI`;
+            document.getElementById('dpiSub').textContent = data.dpi >= 300 ? 'High Quality' : 'Low Res';
+            document.getElementById('inkVal').textContent = `${data.tac}%`;
+            document.getElementById('inkVal').style.color = data.tac > 300 ? 'var(--danger)' : 'var(--success)';
+
+            // Standards
+            document.getElementById('iso1').textContent = data.score > 60 ? 'PASS ✓' : 'FAIL ✗';
+            document.getElementById('iso1').style.color = data.score > 60 ? 'var(--success)' : 'var(--danger)';
+            document.getElementById('pdfx1').textContent = data.score > 60 ? 'PASS ✓' : 'FAIL ✗';
+            document.getElementById('pdfx1').style.color = data.score > 60 ? 'var(--success)' : 'var(--danger)';
+            document.getElementById('g71').textContent = 'PASS ✓';
+            document.getElementById('g71').style.color = 'var(--success)';
+
+            // Fonts
+            const fontList = document.getElementById('fontList');
+            fontList.innerHTML = '';
+            data.fonts.forEach(f => {
+                let libHtml = '';
+                f.libs.forEach(key => {
+                    if(LIBRARIES[key]) {
+                        libHtml += `<div class="lib-dot" style="background:${LIBRARIES[key].color}" data-lib="${LIBRARIES[key].name}"></div>`;
+                    }
+                });
+                
+                const div = document.createElement('div');
+                div.className = 'font-item';
+                div.innerHTML = `
+                    <div class="font-info">
+                        <h4>${f.name}</h4>
+                        <span class="font-status" style="color:${f.status==='Missing'?'var(--danger)':'var(--text-muted)'}">${f.status}</span>
+                    </div>
+                    <div class="lib-icons">${libHtml}</div>
+                `;
+                fontList.appendChild(div);
+            });
+
+            // Issues
+            const issueLog = document.getElementById('issueLog');
+            issueLog.innerHTML = '';
+            document.getElementById('issueCount').textContent = data.issues.length;
+            
+            data.issues.forEach(issue => {
+                const div = document.createElement('div');
+                div.className = `issue-card ${issue.severity}`;
+                div.innerHTML = `
+                    <div class="issue-top">
+                        <span class="issue-type">${issue.type}</span>
+                        <span class="issue-page">Pg ${issue.page}</span>
+                    </div>
+                    <div class="issue-desc">${issue.msg}</div>
+                    <div class="issue-actions">
+                        <span class="fix-link" onclick="showToast('Auto-fix applied: ${issue.action}')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                            Fix: ${issue.action}
+                        </span>
+                        <div class="ai-train" onclick="showToast('Feedback recorded. Model updated.')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                            Train AI
+                        </div>
+                    </div>
+                `;
+                issueLog.appendChild(div);
+            });
+        }
+
+        // --- UTILS ---
+        function zoomIn() {
+            if(state.type === 'application/pdf') { showToast("Use native PDF controls"); return; }
+            state.zoom += 0.1;
+            applyImageZoom();
+        }
+        function zoomOut() {
+            if(state.type === 'application/pdf') { showToast("Use native PDF controls"); return; }
+            state.zoom = Math.max(0.1, state.zoom - 0.1);
+            applyImageZoom();
+        }
+        function resetZoom() {
+            state.zoom = 1;
+            applyImageZoom();
+        }
+        function applyImageZoom() {
+            const img = document.getElementById('mainImage');
+            if(img) {
+                img.style.transform = `scale(${state.zoom})`;
+                document.getElementById('zoomDisplay').textContent = `${Math.round(state.zoom*100)}%`;
+            }
+        }
+        function updateZoomDisplay() {
+            document.getElementById('zoomDisplay').textContent = `${Math.round(state.zoom*100)}%`;
+        }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+        function resetApp() { location.reload(); }
+        function exportReport() { showToast("Report Generated (Simulated)"); }
+
+    </script>
+</body>
+</html>
